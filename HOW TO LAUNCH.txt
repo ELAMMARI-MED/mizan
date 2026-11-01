@@ -1,0 +1,36 @@
+المِيزان — ميزان الشعر (Arabic Prosody Analyzer)
+=================================================
+
+كيفية التشغيل / HOW TO LAUNCH
+-----------------------------
+1. افتح Termux.
+2. شغّل الخادم:
+
+   cd ~/mizan
+   python3 server.py
+
+3. افتح المتصفح على:
+
+   http://localhost:8096
+
+   (من هاتف آخر في نفس الشبكة: http://<IP-الهاتف>:8096)
+
+4. الصق بيتًا شعريًا مشكَّلًا (بالحركات كاملة) واضغط «قطِّع».
+
+ملاحظة مهمة / IMPORTANT
+-----------------------
+الأداة تتطلب تشكيلًا كاملاً للنص، لأن علم العروض يقارن النطق لا الكتابة.
+النص غير المشكول يعطي تحذيرًا ونتائج غير موثوقة.
+The engine requires full tashkeel (vowel marks); unvowelled text is
+flagged with a warning and gives unreliable results.
+
+الملفات / Files
+---------------
+server.py    — خادم بايثون + محرك pyarud (الميناء 8096)
+index.html   — الواجهة (RTL)
+app.js       — منطق الواجهة
+styles.css   — التنسيقات
+sw.js        — تخزين مؤقت للعمل دون اتصال (الواجهة فقط)
+manifest.json + icons — تثبيت كـ PWA
+
+Engine: pyarud (MIT license) — https://github.com/cnemri/pyarud

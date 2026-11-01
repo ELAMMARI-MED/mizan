@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" id="theme-color" content="#0d1512">
+<title>المِيزان — تقطيع الشعر العربي</title>
+<meta name="description" content="أداة تقطيع الشعر العربي إلى تفعيلات وكشف بحوره (علم العروض)">
+<link rel="stylesheet" href="fonts/fonts.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+<header class="site-header">
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="true"
+          title="الوضع النهاري" aria-label="تبديل الوضع النهاري والليلي"></button>
+  <div class="header-inner">
+    <h1 class="logo">المِيزان</h1>
+    <p class="tagline">تقطيع الشعر العربي وكشف بحوره — علم العروض</p>
+  </div>
+  <nav class="main-nav">
+    <button class="nav-btn active" data-view="analyze">التقطيع</button>
+    <button class="nav-btn" data-view="practice">تدريب</button>
+    <button class="nav-btn" data-view="meters">البحور الستة عشر</button>
+    <button class="nav-btn" data-view="glossary">مصطلحات</button>
+    <button class="nav-btn" data-view="about">عن الأداة</button>
+  </nav>
+</header>
+
+<main id="app">
+
+  <!-- ═══ ANALYZE ═══ -->
+  <section id="view-analyze" class="view active">
+    <div class="input-card">
+      <label for="poem-input" class="field-label">الصق البيت أو الأبيات مشكّولةً (مع الحركات)</label>
+      <p class="field-hint">سطر لكل بيت، وافصل بين الشطرين بـ «|» أو مسافتين. «Ctrl+Enter» للتحليل.</p>
+      <textarea id="poem-input" rows="5" spellcheck="false"
+        placeholder="قِفَا نَبْكِ مِنْ ذِكْرَى حَبِيبٍ وَمَنْزِلِ | بِسِقْطِ اللِّوَى بَيْنَ الدَّخُولِ فَحَوْمَلِ&#10;فَتُوضِحَ فَالْمِقْرَاةِ لَمْ يَعْفُ رَسْمُهَا | لِمَا نَسَجَتْهَا مِنْ جَنُوبٍ وَشَمْأَلِ"></textarea>
+      <div class="input-actions">
+        <button id="btn-analyze" class="btn-primary">قطِّع ✦</button>
+        <button id="btn-clear" class="btn-ghost">مسح</button>
+        <span class="samples-label">أمثلة:</span>
+        <button class="btn-sample" data-sample="mutanabbi">المتنبي · الطويل</button>
+        <button class="btn-sample" data-sample="antar">عنترة · الكامل</button>
+        <button class="btn-sample" data-sample="basit">عنترة · البسيط</button>
+        <button class="btn-sample" data-sample="ramal">عنترة · الرمل</button>
+      </div>
+      <div class="tools-row">
+        <div class="size-group" role="group" aria-label="حجم الخط">
+          <button class="size-btn" type="button" data-size="sm" aria-pressed="false" title="تصغير الخط">أ−</button>
+          <span id="size-label" class="size-label">ص+</span>
+          <button class="size-btn" type="button" data-size="lg" aria-pressed="false" title="تكبير الخط">أ+</button>
+        </div>
+        <button id="btn-copy" class="btn-tool" type="button" disabled>انسخ النتيجة</button>
+        <button id="btn-print" class="btn-tool" type="button">طباعة</button>
+        <button id="btn-history" class="btn-tool" type="button">السجل</button>
+      </div>
+    </div>
+
+    <div id="warning-box" class="warning-box hidden"></div>
+
+    <!-- مفتاح التقطيع: 1 للحركة و0 للسكون، ويُقرأ من اليمين إلى اليسار -->
+    <div class="digits-legend">
+      <span class="legend-key"><b class="digit d1">1</b> حَرَكَة (متحرّك)</span>
+      <span class="legend-key"><b class="digit d0">0</b> سُكُون (ساكن)</span>
+      <span class="legend-note">سطر الرموز يُقرأ من اليمين إلى اليسار: أوّل تفعيلة على اليمين</span>
+    </div>
+
+    <div id="history-panel" class="side-panel" hidden></div>
+    <div id="results"></div>
+    <div id="qafiyah-panel" class="side-panel qafiyah-panel" hidden></div>
+  </section>
+
+  <!-- ═══ PRACTICE ═══ -->
+  <section id="view-practice" class="view">
+    <h2 class="view-title">تدريب على البحور</h2>
+    <p class="view-sub">اقرأ البيت المقطَّع واختر بحره. المحرك هو من يحكم، لا القائمة.</p>
+    <div class="practice-card">
+      <div class="practice-top">
+        <span class="practice-label">النتيجة</span>
+        <span id="practice-score" class="practice-score">—</span>
+      </div>
+      <div id="practice-question" class="practice-question">...</div>
+      <div id="practice-options" class="practice-options"></div>
+      <div id="practice-feedback" class="practice-feedback" hidden></div>
+      <button id="practice-next" class="btn-primary practice-next">بيت آخر ↺</button>
+    </div>
+    <p class="practice-hint">💡 قد يسمّي المحرك البحر بصيغة «بحر الطويل»؛ اسم الخيار في القائمة نفس البحر.</p>
+  </section>
+
+  <!-- ═══ METERS ═══ -->
+  <section id="view-meters" class="view">
+    <h2 class="view-title">البحور الستة عشر</h2>
+    <p class="view-sub">وزن الخليل بن أحمد الفراهيدي (ت 175هـ) — أضربُها وما يجوز فيها من الزحاف.</p>
+    <div id="meters-grid" class="meters-grid"></div>
+  </section>
+
+  <!-- ═══ GLOSSARY ═══ -->
+  <section id="view-glossary" class="view">
+    <h2 class="view-title">مصطلحات من علم العروض</h2>
+    <div id="glossary-list" class="glossary-list"></div>
+  </section>
+
+  <!-- ═══ ABOUT ═══ -->
+  <section id="view-about" class="view">
+    <h2 class="view-title">عن المِيزان</h2>
+    <div class="about-card">
+      <p>المِيزان أداةٌ لتقطيع الشعر العربي عموديًّا: تُدخل بيتًا مشكَّلًا فتحصل على التقطيع إلى أسباب وأوتاد، والتفعيلات، والبحر، والزحافات التي أصابت كل تفعيلة، مع تحليل القافية والرويّ.</p>
+      <p>المحرك الحسابي: <b>pyarud</b> (مفتوح المصدر، رخصة MIT)، وقواعد الخليل بن أحمد كما قررها أهل الصناعة.</p>
+      <p class="about-note">⚠️ الشرط الأساسي: النص لا بد أن يكون مشكَّلًا تشكيلًا كاملًا، لأن الوزن يُقارن بالنطق لا بالكتابة. الأبيات غير المشكولة تُرفض أو تُعلَّم بتحذير.</p>
+      <p class="about-note">⌨️ يعمل بلا شبكة: الخطوط مضمَّنة والواجهة تُخزَّن للعمل دون اتصال.</p>
+      <p class="about-foot">من إعداد محمد العماري — الرشيدية؛ المغرب</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <span>الميزان - أداة لتقطيع الشعر العربي من إنجاز محمد العماري</span>
+</footer>
+
+<script src="app.js?v=4"></script>
+</body>
+</html>

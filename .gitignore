@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+node_modules/
+fonts/_google.css
+fonts/_faces.json
