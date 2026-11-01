@@ -5,3 +5,4 @@ __pycache__/
 node_modules/
 fonts/_google.css
 fonts/_faces.json
+test/.cdncache/

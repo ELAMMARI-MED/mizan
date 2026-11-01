@@ -21,7 +21,7 @@ DOCS = ROOT / 'docs'
 
 FILES = [
     'index.html', 'app.js', 'styles.css', 'sw.js', 'manifest.json',
-    'pyarud-worker.js', 'icon-192.png', 'icon-512.png',
+    'pyarud-worker.js', 'pyarud-main.js', 'icon-192.png', 'icon-512.png',
 ]
 DIRS = ['fonts']
 

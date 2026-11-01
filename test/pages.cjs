@@ -28,8 +28,9 @@ globalThis.fetch = async (u) => {
 
 // عامل مُحاكى بنفس بروتوكول pyarud-worker.js
 let workerCreated = null;
+let workerOpts = null;
 globalThis.Worker = class FakeWorker {
-  constructor(url) { workerCreated = String(url); this.onmessage = null; this.onerror = null; }
+  constructor(url, opts) { workerCreated = String(url); workerOpts = opts; this.onmessage = null; this.onerror = null; }
   postMessage(msg) {
     setTimeout(() => {
       this.onmessage({ data: { type: 'status', text: 'يُهيّئ محرّك العروض أوّل مرّة…' } });
@@ -52,6 +53,7 @@ const check = (n, c, e) => (c ? ok : bad).push(n + (e !== undefined ? ' → ' + 
 
   check('API tried first', apiHits >= 1, apiHits);
   check('worker spawned', workerCreated === 'pyarud-worker.js', workerCreated);
+  check('worker is a module worker (Pyodide 314 requires it)', workerOpts && workerOpts.type === 'module', JSON.stringify(workerOpts));
   check('verse rendered from worker', !!q('.verse-card'));
   check('meter correct', /الطويل/.test((q('.meter-badge') || {}).textContent || ''));
   check('feet rendered', qa('.foot').length === 8, qa('.foot').length);

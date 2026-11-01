@@ -235,7 +235,8 @@ function engineNote(text) {
 function workerAnalyze(text) {
   return new Promise((resolve, reject) => {
     if (!pyWorker) {
-      pyWorker = new Worker('pyarud-worker.js');
+      // Pyodide 314 يرفض العوامل الكلاسيكية: لا بدّ من عامل وحدة
+      pyWorker = new Worker('pyarud-worker.js', { type: 'module' });
       pyWorker.onmessage = (ev) => {
         const m = ev.data || {};
         if (m.type === 'status') { engineNote(m.text); return; }
@@ -243,19 +244,34 @@ function workerAnalyze(text) {
         if (!job) return;
         workerPending.delete(m.id);
         if (m.ok) { engineNote(''); job.resolve(m.data); }
-        else job.reject(new Error(m.error || 'engine error'));
+        else {
+          engineNote('⚠️ تعذّر تشغيل المحرك: ' + (m.error || 'خطأ غير معروف'));
+          job.reject(new Error(m.error || 'engine error'));
+        }
       };
       pyWorker.onerror = (e) => {
-        const msg = (e && e.message) || 'تعذّر تشغيل محرك المتصفح';
+        const msg = (e && e.message) || 'تعذّر تشغيل محرك المتصفح (قد يكون المتصفح قديمًا)';
         workerPending.forEach(pendingJob => pendingJob.reject(new Error(msg)));
         workerPending.clear();
-        engineNote('');
+        engineNote('⚠️ ' + msg + ' — استعمل النسخة المحلية أو تطبيق الأندرويد.');
       };
     }
     const id = ++workerSeq;
     workerPending.set(id, { resolve, reject });
     pyWorker.postMessage({ id, text });
   });
+}
+
+let mainThreadEngine = null;
+let workerBroken = false;
+
+async function mainThreadAnalyze(text) {
+  engineNote('يُهيّئ محرّك العروض في الصفحة (بديل العامل)…');
+  if (!mainThreadEngine) mainThreadEngine = import('./pyarud-main.js');
+  const mod = await mainThreadEngine;
+  const data = await mod.analyze(text);
+  engineNote('');
+  return data;
 }
 
 async function analyzeText(text) {
@@ -268,7 +284,16 @@ async function analyzeText(text) {
     const ct = (res.headers.get && res.headers.get('content-type')) || '';
     if (res.ok && ct.indexOf('json') !== -1) return await res.json();
   } catch (e) { /* لا خادم على هذا النطاق: نستعمل محرك المتصفح */ }
-  return workerAnalyze(text);
+
+  if (!workerBroken) {
+    try {
+      return await workerAnalyze(text);
+    } catch (e) {
+      // عامل الوحدة محجوب أو المتصفح قديم → المحرك على الخيط الرئيسي
+      workerBroken = true;
+    }
+  }
+  return mainThreadAnalyze(text);
 }
 
 /* ── analyze ── */
