@@ -5,7 +5,7 @@
 
 الصفحات ثابتة، فالمحرك (Python) يعمل داخل المتصفح عبر Pyodide:
   docs/pyarud.zip  = pyarud + prosody_core.py
-  docs/pyarud-worker.js = يحمّل Pyodide من CDN ويستدعي نفس analyze_text
+  docs/pyarud-main.js  = يحمّل Pyodide ويتشغّل في الصفحة (لا عامل: 314 يرفض الكلاسيكي)
 على الخادم المحلي وداخل الـ APK يبقى المسار الأصلي: POST /api/analyze.
 
     python3 scripts/build_pages.py            # بناء docs/
@@ -21,7 +21,7 @@ DOCS = ROOT / 'docs'
 
 FILES = [
     'index.html', 'app.js', 'styles.css', 'sw.js', 'manifest.json',
-    'pyarud-worker.js', 'pyarud-main.js', 'icon-192.png', 'icon-512.png',
+    'pyarud-main.js', 'icon-192.png', 'icon-512.png',
 ]
 DIRS = ['fonts']
 

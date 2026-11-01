@@ -220,10 +220,10 @@ $('#btn-history').addEventListener('click', () => {
 });
 renderHistory();
 
-/* ── المحرك: خادم محلي إن وُجد، وإلّا Pyodide داخل المتصفح (نسخة الموقع المنشور) ── */
-let pyWorker = null;
-let workerSeq = 0;
-const workerPending = new Map();
+/* ── المحرك: خادم محلي إن وُجد (خادم التطوير / APK)، وإلّا Pyodide في الصفحة نفسها.
+   GitHub Pages لا يشغّل Python، فنسخة الويب تحمّل pyarud-main.js وتعمل على الخيط الرئيسي.
+   (العامل لم يُستعمل: Pyodide 314 يرفض العوامل الكلاسيكية، وعوامل الوحدة قد تبقى بلا ردّ.) ── */
+let mainEnginePromise = null;
 
 function engineNote(text) {
   const el = $('#engine-note');
@@ -232,46 +232,30 @@ function engineNote(text) {
   el.hidden = !text;
 }
 
-function workerAnalyze(text) {
-  return new Promise((resolve, reject) => {
-    if (!pyWorker) {
-      // Pyodide 314 يرفض العوامل الكلاسيكية: لا بدّ من عامل وحدة
-      pyWorker = new Worker('pyarud-worker.js', { type: 'module' });
-      pyWorker.onmessage = (ev) => {
-        const m = ev.data || {};
-        if (m.type === 'status') { engineNote(m.text); return; }
-        const job = workerPending.get(m.id);
-        if (!job) return;
-        workerPending.delete(m.id);
-        if (m.ok) { engineNote(''); job.resolve(m.data); }
-        else {
-          engineNote('⚠️ تعذّر تشغيل المحرك: ' + (m.error || 'خطأ غير معروف'));
-          job.reject(new Error(m.error || 'engine error'));
-        }
-      };
-      pyWorker.onerror = (e) => {
-        const msg = (e && e.message) || 'تعذّر تشغيل محرك المتصفح (قد يكون المتصفح قديمًا)';
-        workerPending.forEach(pendingJob => pendingJob.reject(new Error(msg)));
-        workerPending.clear();
-        engineNote('⚠️ ' + msg + ' — استعمل النسخة المحلية أو تطبيق الأندرويد.');
-      };
-    }
-    const id = ++workerSeq;
-    workerPending.set(id, { resolve, reject });
-    pyWorker.postMessage({ id, text });
-  });
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' (تجاوز ' + Math.round(ms / 1000) + ' ث)')), ms)),
+  ]);
 }
 
-let mainThreadEngine = null;
-let workerBroken = false;
-
 async function mainThreadAnalyze(text) {
-  engineNote('يُهيّئ محرّك العروض في الصفحة (بديل العامل)…');
-  if (!mainThreadEngine) mainThreadEngine = import('./pyarud-main.js');
-  const mod = await mainThreadEngine;
-  const data = await mod.analyze(text);
-  engineNote('');
-  return data;
+  // خطّاف للاختبار: يسمح بحقن محرك مزيّف في بيئة jsdom
+  if (typeof window !== 'undefined' && typeof window.__MIZAN_ENGINE__ === 'function') {
+    return window.__MIZAN_ENGINE__(text);
+  }
+  engineNote('يُهيّئ محرّك العروض أوّل مرّة (تنزيل ~10 م.ب، ثم يعمل من الكاش)…');
+  if (!mainEnginePromise) mainEnginePromise = import('./pyarud-main.js');
+  try {
+    const mod = await withTimeout(mainEnginePromise, 60000, 'تعذّر تحميل محرك المتصفح');
+    const data = await withTimeout(mod.analyze(text), 180000, 'تعذّر تحليل النص');
+    engineNote('');
+    return data;
+  } catch (e) {
+    mainEnginePromise = null;  // محاولة أخرى في الضغط التالي
+    engineNote('⚠️ ' + (e && e.message ? e.message : e) + ' — استعمل تطبيق الأندرويد أو الخادم المحلي.');
+    throw e;
+  }
 }
 
 async function analyzeText(text) {
@@ -283,16 +267,7 @@ async function analyzeText(text) {
     });
     const ct = (res.headers.get && res.headers.get('content-type')) || '';
     if (res.ok && ct.indexOf('json') !== -1) return await res.json();
-  } catch (e) { /* لا خادم على هذا النطاق: نستعمل محرك المتصفح */ }
-
-  if (!workerBroken) {
-    try {
-      return await workerAnalyze(text);
-    } catch (e) {
-      // عامل الوحدة محجوب أو المتصفح قديم → المحرك على الخيط الرئيسي
-      workerBroken = true;
-    }
-  }
+  } catch (e) { /* لا خادم على هذا النطاق */ }
   return mainThreadAnalyze(text);
 }
 

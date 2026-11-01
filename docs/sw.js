@@ -1,14 +1,14 @@
 /* المِيزان service worker — القشرة تُجلب من الشبكة أوّلًا (ثم الكاش عند عدم الاتصال).
    cache-first هنا كان يُخفي كل تعديل على الواجهة، لأن /index.html يبقى مخزّنًا بلا تحقّق. */
-const CACHE = 'mizan-v7';
+const CACHE = 'mizan-v8';
 // مسارات نسبيّة: تعمل على الجذر (خادم/APK) وعلى /mizan/ (GitHub Pages) بلا تعديل
 const STATIC = [
   './',
   'index.html',
-  'styles.css?v=6',
-  'app.js?v=6',
+  'styles.css?v=7',
+  'app.js?v=7',
   'manifest.json',
-  'pyarud-worker.js',
+
   'pyarud-main.js',
   'pyarud.zip',
   'fonts/fonts.css',

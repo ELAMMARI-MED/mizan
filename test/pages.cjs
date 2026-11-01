@@ -28,16 +28,9 @@ globalThis.fetch = async (u) => {
 
 // عامل مُحاكى بنفس بروتوكول pyarud-worker.js
 let workerCreated = null;
-let workerOpts = null;
-globalThis.Worker = class FakeWorker {
-  constructor(url, opts) { workerCreated = String(url); workerOpts = opts; this.onmessage = null; this.onerror = null; }
-  postMessage(msg) {
-    setTimeout(() => {
-      this.onmessage({ data: { type: 'status', text: 'يُهيّئ محرّك العروض أوّل مرّة…' } });
-      setTimeout(() => this.onmessage({ data: { id: msg.id, ok: true, data: real } }), 60);
-    }, 20);
-  }
-};
+// محرّك الصفحة (Pyodide) — نستبدله هنا بخطّاف الاختبار __MIZAN_ENGINE__
+let engineCalls = 0;
+w.__MIZAN_ENGINE__ = async (text) => { engineCalls++; return real; };
 
 const q = (s) => document.querySelector(s), qa = (s) => Array.from(document.querySelectorAll(s));
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -52,9 +45,9 @@ const check = (n, c, e) => (c ? ok : bad).push(n + (e !== undefined ? ' → ' + 
   await wait(2500);
 
   check('API tried first', apiHits >= 1, apiHits);
-  check('worker spawned', workerCreated === 'pyarud-worker.js', workerCreated);
-  check('worker is a module worker (Pyodide 314 requires it)', workerOpts && workerOpts.type === 'module', JSON.stringify(workerOpts));
-  check('verse rendered from worker', !!q('.verse-card'));
+  check('no Worker used any more', typeof w.Worker === 'undefined' || engineCalls > 0);
+  check('page engine used', engineCalls >= 1, engineCalls);
+  check('verse rendered by page engine', !!q('.verse-card'));
   check('meter correct', /الطويل/.test((q('.meter-badge') || {}).textContent || ''));
   check('feet rendered', qa('.foot').length === 8, qa('.foot').length);
   check('digits coloured', qa('.seg-digits .d1').length > 10, qa('.seg-digits .d1').length);
