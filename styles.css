@@ -469,3 +469,12 @@ code.digits { background: var(--bg-card-2); border: 1px solid var(--line); borde
   .pattern-chip, .seg-digits, .d1, .d0 { color: #000 !important; }
   #app { max-width: none; padding: 0; }
 }
+
+
+/* حالة تهيئة محرك المتصفح (تظهر مرّة واحدة في النسخة المنشورة بلا خادم) */
+.engine-note {
+  margin-top: 12px; padding: 8px 14px; border-radius: 999px;
+  border: 1px dashed var(--line); background: var(--bg-card-2);
+  color: var(--text-dim); font-size: .88rem; text-align: center;
+}
+.engine-note[hidden] { display: none; }

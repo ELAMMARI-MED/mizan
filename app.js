@@ -2,7 +2,7 @@
 'use strict';
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(() => {
+  navigator.serviceWorker.register('sw.js').then(() => {
     // عامل خدمة جديد أخذ السيطرة بعد تحديث: إعادة تحميل واحدة تكفي لظهور النسخة الجديدة
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       try {
@@ -220,6 +220,57 @@ $('#btn-history').addEventListener('click', () => {
 });
 renderHistory();
 
+/* ── المحرك: خادم محلي إن وُجد، وإلّا Pyodide داخل المتصفح (نسخة الموقع المنشور) ── */
+let pyWorker = null;
+let workerSeq = 0;
+const workerPending = new Map();
+
+function engineNote(text) {
+  const el = $('#engine-note');
+  if (!el) return;
+  el.textContent = text || '';
+  el.hidden = !text;
+}
+
+function workerAnalyze(text) {
+  return new Promise((resolve, reject) => {
+    if (!pyWorker) {
+      pyWorker = new Worker('pyarud-worker.js');
+      pyWorker.onmessage = (ev) => {
+        const m = ev.data || {};
+        if (m.type === 'status') { engineNote(m.text); return; }
+        const job = workerPending.get(m.id);
+        if (!job) return;
+        workerPending.delete(m.id);
+        if (m.ok) { engineNote(''); job.resolve(m.data); }
+        else job.reject(new Error(m.error || 'engine error'));
+      };
+      pyWorker.onerror = (e) => {
+        const msg = (e && e.message) || 'تعذّر تشغيل محرك المتصفح';
+        workerPending.forEach(pendingJob => pendingJob.reject(new Error(msg)));
+        workerPending.clear();
+        engineNote('');
+      };
+    }
+    const id = ++workerSeq;
+    workerPending.set(id, { resolve, reject });
+    pyWorker.postMessage({ id, text });
+  });
+}
+
+async function analyzeText(text) {
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const ct = (res.headers.get && res.headers.get('content-type')) || '';
+    if (res.ok && ct.indexOf('json') !== -1) return await res.json();
+  } catch (e) { /* لا خادم على هذا النطاق: نستعمل محرك المتصفح */ }
+  return workerAnalyze(text);
+}
+
 /* ── analyze ── */
 async function runAnalyze() {
   const text = $('#poem-input').value.trim();
@@ -228,12 +279,7 @@ async function runAnalyze() {
   btn.disabled = true;
   btn.textContent = '...';
   try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    const data = await res.json();
+    const data = await analyzeText(text);
     if (data.error) {
       $('#results').innerHTML = '<div class="warning-box">' + esc(data.error) + '</div>';
       return;
@@ -534,12 +580,8 @@ async function newQuestion() {
   const item = POOL[Math.floor(Math.random() * POOL.length)];
   let detected = item.meter;
   try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: item.text }),
-    });
-    const d = await res.json();
-    if (d.dominant_meter) detected = d.dominant_meter;
+    const d = await analyzeText(item.text);
+    if (d && d.dominant_meter) detected = d.dominant_meter;
   } catch (e) { /* المحرك غير متاح: نستخدم اسم البحر من القائمة */ }
 
   practice.answer = detected;
