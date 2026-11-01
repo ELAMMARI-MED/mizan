@@ -7,12 +7,34 @@
 - المحرك: [pyarud](https://pypi.org/project/pyarud/) (رخصة MIT) — قواعد الخليل بن أحمد.
 - التغليف: تطبيق أندرويد (Chaquopy) يعمل بلا إنترنت: المحرك مضمَّن داخل الـ APK.
 
+## النسخ الثلاث
+
+| النسخة | المحرك | الرابط |
+| --- | --- | --- |
+| موقع منشور (GitHub Pages) | Pyodide داخل المتصفح | https://elammari-med.github.io/mizan/ |
+| خادم محلي | Python + pyarud | `http://localhost:8096` |
+| تطبيق أندرويد | Python مضمَّن (Chaquopy) | `~/storage/downloads/Mizan.apk` |
+
+الواجهة واحدة في الثلاث: `app.js` يحاول `POST /api/analyze` أوّلًا (خادم/APK)،
+وإن لم يجد خادمًا — كما في GitHub Pages — يشغّل نفس `prosody_core.py` عبر
+[Pyodide](https://pyodide.org) داخل Web Worker. لا نسختين من منطق العروض.
+
 ## التشغيل على الحاسوب/Termux
 
 ```bash
 python3 -m pip install pyarud
 python3 server.py          # http://localhost:8096
 ```
+
+## نشر نسخة الويب
+
+```bash
+python3 scripts/build_pages.py       # يبني docs/ (الواجهة + fonts + pyarud.zip)
+git add -A && git commit -m "pages: rebuild" && git push
+```
+
+GitHub Pages يخدم `docs/` من `main` تلقائيًّا. أوّل زيارة تنزّل Pyodide (~10 م.ب من CDN)
+ثم يبقى في الكاش؛ أوّل تحليل ~0.4 ثانية بعد التهيئة.
 
 ## ما تفتحه الأداة
 
